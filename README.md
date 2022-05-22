@@ -2,5 +2,4 @@
 
 1-) npm install
 2-) npm start
-3-) go to index.html
-4-) open with live server
+3-) open [localhost:4000](http://localhost:4000/)
