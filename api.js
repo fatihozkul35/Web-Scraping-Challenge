@@ -1,50 +1,65 @@
 const express = require("express");
+const path = require("path");
 const axios = require("axios");
 const cheerio = require("cheerio");
 
 const app = express();
-
+app.use(express.static(path.join(__dirname, "public")));
 async function scrapeData() {
   try {
-    // Fetch HTML of the page we want to scrape
     const url =
       "https://www.springerprofessional.de/wasserwirtschaft-4-2019/16592584";
     const { data } = await axios.get(url);
-    // Load HTML we fetched in the previous line
+
     const $ = cheerio.load(data);
-    // Select all the list items in plainlist class
+
+    const contents = [];
+
+    const editionAndJahr = $(".issue-title").text().split(" ")[1];
+    const edition = editionAndJahr.split("/")[0];
+    const year = editionAndJahr.split("/")[1];
+    
+    // <h1 class="issue-title">Ausgabe 4/2019</h1>;
+
     const listItems = $(".teaser.cf");
-    //console.log(listItems)
 
-    // Stores data for all countries
-    const countries = [];
-    // Use .each method to loop through the li we selected
-    listItems.each((idx, el) => {
-      // Object holding data for each country/jurisdiction
-      const data = { title: "", date: "", url: "" };
-      // Select the text content of a and span elements
-      // Store the textcontent in the above object
+    
+
+    listItems.each((id, el) => {
+      
+      const data = {
+        edition: edition,
+        date: "",
+        year: year,
+        category:"",
+        title: "",
+        author:"",
+        url: "",
+      };
+       
+      
+      data.date = $(el).children("p").text().trim().split(" | ")[0];
+      data.category = $(el).children("p").text().trim().split(" | ")[1];
       data.title = $(el).children("a").text().trim();
-      data.date = $(el).children("p").text().trim();
-      data.url = $(el).children("a").attr("href");
+      data.author = $(el).children("div").text().trim();
+      data.url =
+        "https://www.springerprofessional.de" +
+        $(el).children("a").attr("href");
 
-      // Populate countries array with country data
-      countries.push(data);
+      contents.push(data);
     });
-    // Logs countries array to the console
-    //console.dir(countries);
-    return countries;
-    // Write countries array in countries.json file
+
+    return contents;
   } catch (err) {
     console.error(err);
   }
 }
 
 
-app.get("/", async function (req, res) {
+app.get("/api", async function (req, res) {
   const result = await scrapeData(); 
   
-    res.send("result");
+    res.send(result);
 });
 
 app.listen(4000,()=> console.log("Server started on http://localhost:4000") );
